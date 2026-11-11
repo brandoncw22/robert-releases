@@ -1,6 +1,6 @@
 # Robert
 
-Robert is a local command-line coding assistant. It uses [Ollama](https://ollama.com/) on your own machine for its models. This repository publishes Robert's Windows and Linux release builds and their SHA-256 checksum files. Application source is kept out of this repository.
+Robert is a local command-line coding assistant. It uses [Ollama](https://ollama.com/) on your own machine for its models. This repository will publish Robert's Windows and Linux release builds and their SHA-256 checksum files. Application source is kept out of this repository.
 
 ## Supported platforms
 
@@ -75,18 +75,18 @@ When the Linux installer is available, remove Robert with the uninstall steps in
 
 Compare every artifact to the SHA-256 checksum file from the same GitHub Release before you run it. A matching digest means the file is the one attached to that release. If it does not match, delete the download and fetch it again from the release page.
 
-`RobertSetup.exe` and the Linux installer are coming with the first release. The examples below are for those future files.
+`RobertSetup.exe` and the Linux installer are coming with the first release. The examples below use placeholder names.
 
 ### Windows (PowerShell)
 
 From the directory that contains the download:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -Path .\RobertSetup.exe
-Get-Content .\RobertSetup.exe.sha256
+Get-FileHash -Algorithm SHA256 -Path .\ARTIFACT_FILE
+Get-Content .\CHECKSUM_FILE
 ```
 
-`Get-FileHash` prints a `Hash` value. That value must match the hexadecimal digest in the checksum file. Letter case does not matter. If the release uses another checksum filename, open the checksum file attached to that artifact and compare it the same way.
+`Get-FileHash` prints a `Hash` value. That value must match the hexadecimal digest in the checksum file. Letter case does not matter. Replace `ARTIFACT_FILE` with the downloaded file's name and `CHECKSUM_FILE` with the checksum filename from the same release.
 
 ### Linux (`sha256sum`)
 
