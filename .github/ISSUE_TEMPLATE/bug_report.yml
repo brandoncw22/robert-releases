@@ -1,0 +1,107 @@
+name: Bug report
+description: Report a problem with a Robert release on Windows or Linux.
+title: "Bug: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for a defect in a Robert release.
+
+        Issues in this repository are public. Remove secrets before you submit: tokens, passwords, API keys, cookies, connection strings, and private paths (including paths inside `robert doctor` output).
+
+        Supported platforms are Windows and Linux. macOS is not supported. No release is published yet; `RobertSetup.exe` and the Linux installer are coming with the first release.
+
+  - type: input
+    id: robert-version
+    attributes:
+      label: Robert version
+      description: The release you installed. Include the version the CLI prints, when it prints one.
+      placeholder: release tag or version string
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      description: Windows and Linux are the supported platforms. macOS is not supported.
+      options:
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version
+      description: Windows build or Linux distribution and version.
+      placeholder: Windows 11 24H2, or Ubuntu 24.04
+    validations:
+      required: true
+
+  - type: input
+    id: ollama-version
+    attributes:
+      label: Ollama version
+      description: Output of `ollama --version`.
+      placeholder: ollama version is ...
+    validations:
+      required: true
+
+  - type: input
+    id: ollama-model
+    attributes:
+      label: Ollama model
+      description: The model in use when the problem happened. `ollama list` shows models installed locally.
+      placeholder: model name from ollama list
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, in order. Leave out secrets and private paths.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: What happened instead. Paste error text here if you have it, with secrets removed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: robert doctor output
+      description: |
+        Paste the output of `robert doctor`.
+        Remove secrets, tokens, passwords, API keys, cookies, and private paths first.
+        If the command is not available yet, say that here.
+      render: shell
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: secrets-removed
+    attributes:
+      label: Secrets removed
+      options:
+        - label: I removed secrets, tokens, passwords, API keys, cookies, and private paths from this report, including the `robert doctor` output.
+          required: true
