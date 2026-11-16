@@ -29,7 +29,7 @@ script installers.
   installers do not bundle or download Node.js either.
 - A model server: [Ollama](https://ollama.com/download) (the default), or an OpenAI-compatible
   server you configure. This repository does not require a specific model name. `robert doctor`
-  reports what is missing once Robert is running.
+  prints system info and checks Ollama. It does not probe an OpenAI-compatible endpoint.
 
 ## Release assets
 
@@ -223,9 +223,10 @@ renames. There is no whole-install crash recovery.
 
 ## First run
 
-`robert doctor` (and `robert doctor --json`) is a read-only report of your machine, Node.js, and
-provider status. It always exits 0 today, even when it reports problems. It does not save a
-model and it does not call one.
+`robert doctor` (and `robert doctor --json`) prints system info and checks Ollama: whether it is
+installed, whether it is running, which models are installed, and whether those models can call
+tools. It does not probe an OpenAI-compatible endpoint. It always exits 0 today, even when it
+reports problems. It does not save a model and it does not call one.
 
 `robert init` chooses an installed model for the provider you already configured. It does not
 download models, switch providers, enable tools, or change permission policy. It needs Node.js

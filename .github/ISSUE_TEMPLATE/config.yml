@@ -2,4 +2,4 @@ blank_issues_enabled: true
 contact_links:
   - name: Releases
     url: https://github.com/brandoncw22/robert-releases/releases
-    about: Portable archives, script installers (`robert-<version>-windows-x64-install.ps1`, `robert-<version>-linux-x64-install.mjs`), and `SHA256SUMS`. No `RobertSetup.exe`.
+    about: Portable archives, script installers (`robert-<version>-windows-x64-install.ps1`, `robert-<version>-linux-x64-install.mjs`), `exec-json.schema.json`, and `SHA256SUMS`. No `RobertSetup.exe`.
