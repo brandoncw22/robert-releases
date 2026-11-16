@@ -9,7 +9,7 @@ body:
 
         Issues in this repository are public. Remove secrets before you submit: tokens, passwords, API keys, cookies, connection strings, and private paths (including paths inside `robert doctor` output).
 
-        Supported platforms are Windows and Linux. macOS is not supported. No release is published yet; `RobertSetup.exe` and the Linux installer are coming with the first release.
+        Supported platforms are Windows and Linux. macOS is not supported. No release is published yet. The first release ships six assets: `robert-<version>-windows-x64.zip`, `robert-<version>-linux-x64.tar.gz`, `robert-<version>-windows-x64-install.ps1`, `robert-<version>-linux-x64-install.mjs`, `exec-json.schema.json`, and `SHA256SUMS`. There is no `RobertSetup.exe`.
 
   - type: input
     id: robert-version
@@ -40,23 +40,34 @@ body:
     validations:
       required: true
 
-  - type: input
-    id: ollama-version
+  - type: dropdown
+    id: provider
     attributes:
-      label: Ollama version
-      description: Output of `ollama --version`.
-      placeholder: ollama version is ...
+      label: Provider
+      description: The model server Robert is talking to.
+      options:
+        - Ollama
+        - OpenAI-compatible server
     validations:
       required: true
 
   - type: input
-    id: ollama-model
+    id: model
     attributes:
-      label: Ollama model
-      description: The model in use when the problem happened. `ollama list` shows models installed locally.
-      placeholder: model name from ollama list
+      label: Model
+      description: Name of the model in use.
+      placeholder: model name
     validations:
       required: true
+
+  - type: input
+    id: provider-version
+    attributes:
+      label: Provider version
+      description: For example, the output of `ollama --version`, or the server name and version.
+      placeholder: ollama version is ...
+    validations:
+      required: false
 
   - type: textarea
     id: steps
@@ -93,7 +104,6 @@ body:
       description: |
         Paste the output of `robert doctor`.
         Remove secrets, tokens, passwords, API keys, cookies, and private paths first.
-        If the command is not available yet, say that here.
       render: shell
     validations:
       required: true

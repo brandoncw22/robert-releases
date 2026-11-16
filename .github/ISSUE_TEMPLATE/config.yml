@@ -2,4 +2,4 @@ blank_issues_enabled: true
 contact_links:
   - name: Releases
     url: https://github.com/brandoncw22/robert-releases/releases
-    about: Windows and Linux downloads and SHA-256 checksums. Installers are coming with the first release.
+    about: Portable archives, script installers (`robert-<version>-windows-x64-install.ps1`, `robert-<version>-linux-x64-install.mjs`), and `SHA256SUMS`. No `RobertSetup.exe`.

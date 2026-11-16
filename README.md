@@ -5,8 +5,8 @@ computer (through [Ollama](https://ollama.com) or an OpenAI-compatible server yo
 needs no account, subscription, or internet connection once your models are available, and it sends
 no telemetry.
 
-This repository publishes Robert's Windows and Linux **portable archives** and their SHA-256
-checksum file. Application source is kept out of this repository.
+This repository will publish Robert's Windows and Linux portable archives, script installers,
+`exec-json.schema.json`, and `SHA256SUMS`. Application source is kept out of this repository.
 
 **No release has been published yet.** When a version is tagged, the assets will appear on the
 [Releases](https://github.com/brandoncw22/robert-releases/releases) page. Until then there is
@@ -21,43 +21,51 @@ macOS is not supported.
 
 ## Prerequisites
 
-Install these on the machine where Robert will run. They are not included in the archive.
+Install these on the machine where Robert will run. They are not included in the archive or the
+script installers.
 
 - **Node.js 22.13 or newer** on your `PATH`. Download it from [nodejs.org](https://nodejs.org/).
-  Node is not bundled, and the archive does not install itself or change `PATH`.
+  Node is not bundled. A portable archive does not install itself or change `PATH`. The script
+  installers do not bundle or download Node.js either.
 - A model server: [Ollama](https://ollama.com/download) (the default), or an OpenAI-compatible
   server you configure. This repository does not require a specific model name. `robert doctor`
   reports what is missing once Robert is running.
 
 ## Release assets
 
-Each GitHub Release (when one exists) has exactly these three assets:
+Each GitHub Release (when one exists) has exactly these six assets:
 
 - `robert-<version>-windows-x64.zip`
 - `robert-<version>-linux-x64.tar.gz`
+- `robert-<version>-windows-x64-install.ps1`
+- `robert-<version>-linux-x64-install.mjs`
+- `exec-json.schema.json` (the `robert exec --json` schema, version 1)
 - `SHA256SUMS`
 
-There is no `RobertSetup.exe` and no Linux installer in the release. Those installers are not
-shipped yet. The files are not Authenticode-signed, and no separate signature file (`.sig`, `.asc`)
-is published.
+`SHA256SUMS` covers every other asset above, including both script installers and the schema. It
+does not cover itself. Each line is a lowercase SHA-256 digest, two spaces, then the file name.
 
-`SHA256SUMS` lists both archives. Each line is a lowercase SHA-256 digest, two spaces, then the
-file name.
+There is no `RobertSetup.exe`. Windows setup is `robert-<version>-windows-x64-install.ps1`. The
+files are not Authenticode-signed, and no separate signature file (`.sig`, `.asc`) is published.
 
 ## Install
 
 Replace `<version>` with the version on the release page (for example `0.1.0` or `0.1.0-rc.1`).
 
+Portable archives do not install themselves or change `PATH`. Script installers are a separate
+path, described below.
+
 ### Windows
 
 1. Download `robert-<version>-windows-x64.zip` and `SHA256SUMS` from the
-   [Releases](https://github.com/brandoncw22/robert-releases/releases) page. To check both checksum
-   lines at once, also download the Linux archive into the same empty directory.
+   [Releases](https://github.com/brandoncw22/robert-releases/releases) page. To check every
+   checksum line, also download the other assets into the same empty directory: the Linux
+   archive, both script installers, and `exec-json.schema.json`.
 2. Verify the zip. PowerShell's `Get-FileHash` prints **uppercase** hashes; `SHA256SUMS` is
    **lowercase**. Compare them case-insensitively (`-eq` is case-insensitive for strings):
 
    ```powershell
-   $archive = Get-Item .\robert-*-windows-x64.zip
+   $archive = Get-Item .\robert-<version>-windows-x64.zip
    $actual = (Get-FileHash -Algorithm SHA256 -Path $archive).Hash
    $expected = (
      Get-Content .\SHA256SUMS |
@@ -67,8 +75,19 @@ Replace `<version>` with the version on the release page (for example `0.1.0` or
    if ($actual -eq $expected) { 'OK' } else { 'MISMATCH' }
    ```
 
-   If the result is `MISMATCH`, delete the download and fetch it again. Do not run a file whose
-   hash does not match.
+   Verify the Windows script installer as well. `SHA256SUMS` puts two spaces before the file
+   name. `-ine` compares hashes without caring about letter case:
+
+   ```powershell
+   $file = 'robert-<version>-windows-x64-install.ps1'
+   $line = @(Get-Content .\SHA256SUMS | Where-Object { $_.EndsWith("  $file") })
+   if ($line.Count -ne 1) { throw 'Expected exactly one installer checksum' }
+   $expected = ($line[0] -split '\s+')[0]
+   if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ine $expected) { throw 'Checksum mismatch' }
+   ```
+
+   If either result is a mismatch, delete the download and fetch it again. Do not run a file
+   whose hash does not match.
 3. Extract the zip. It unpacks a folder named `robert-<version>-windows-x64` containing
    `robert.cmd`, `robert.mjs`, `README.txt`, and `LICENSE`:
 
@@ -85,15 +104,24 @@ want to run `robert` from any directory.
 ### Linux
 
 1. Download `robert-<version>-linux-x64.tar.gz` and `SHA256SUMS`. To run `sha256sum -c SHA256SUMS`
-   without errors about a missing file, download all three release assets into an empty directory.
+   without errors about a missing file, download all six release assets into an empty directory.
 2. Verify:
 
    ```sh
    sha256sum -c SHA256SUMS
    ```
 
-   A match prints `OK` beside each filename. If you only downloaded the Linux archive, compare just
-   that file's line instead; `sha256sum -c SHA256SUMS` will fail on the missing Windows zip.
+   A match prints `OK` beside each filename, including both script installers and
+   `exec-json.schema.json` when those files are in the directory. If a name in `SHA256SUMS` is
+   not in the directory, that line fails. To check only the files you downloaded, including the
+   Linux installer `robert-<version>-linux-x64-install.mjs`:
+
+   ```sh
+   sha256sum -c SHA256SUMS --ignore-missing
+   ```
+
+   Require `OK` on the installer line, not only on the archive. A failed line means that file
+   does not match; delete it and download it again.
 3. Extract and run. The tarball unpacks a directory named `robert-<version>-linux-x64` containing
    `robert`, `robert.mjs`, `README.txt`, and `LICENSE`. The packager sets the `robert` launcher to
    mode `0755`, and a normal `tar -xzf` keeps that executable bit. If a later copy drops it, run
@@ -108,42 +136,205 @@ want to run `robert` from any directory.
 
 The launcher does not change `PATH`. Use `./robert` so you do not pick up a different command.
 
+## Script installers
+
+A release includes these two scripts in addition to the portable archives. There is still no
+`RobertSetup.exe`. Both scripts are unsigned. Both require Node.js 22.13 or newer already on
+`PATH`. They do not bundle or download Node.js, and they do not download or select a model.
+Verify the script against `SHA256SUMS` before you run it. A matching checksum shows the bytes
+were not altered. It does not prove who published the file.
+
+### Windows script installer
+
+`robert-<version>-windows-x64-install.ps1` is the current-user PowerShell setup (Windows
+PowerShell 5.1). It does not need administrator rights. `ExecutionPolicy Bypass` on the command
+below applies only to that process. It does not change machine or user policy. Enterprise
+controls can still block the unsigned script.
+
+After the installer checksum above:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\robert-<version>-windows-x64-install.ps1" install
+```
+
+The default directory is `%LOCALAPPDATA%\Programs\Robert`. The installer adds that install's
+`bin` folder to the **user** `PATH` without `setx` and without truncating other entries. It
+registers **Robert CLI** in current-user uninstall settings. Open a new terminal,
+then run `robert --version`, `robert --help`, and `robert doctor`.
+
+For any other directory, pass the same `-InstallDir` on every install and uninstall.
+
+Upgrade by running the newer installer. Installing that same version again is supported.
+Downgrades are refused, and so is a same-version installer whose payload differs. Only one
+current-user installation is registered at a time. An existing portable or developer launcher
+is not replaced. `Get-Command robert -All` shows which `robert` comes first on `PATH`.
+
+Uninstall from the current-user Windows application list, or, for the default directory:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Programs\Robert\uninstall.ps1" uninstall
+```
+
+Uninstall removes only verified files the installer owns, its registry entry, and a `PATH`
+entry it originally added. Settings (`%APPDATA%\Robert`), instructions, SQLite sessions
+(`%LOCALAPPDATA%\Robert`), and unrelated `PATH` entries stay. An interrupted install is not
+rolled back automatically. Read the error and see which files remain before you delete
+anything.
+
+### Linux script installer
+
+`robert-<version>-linux-x64-install.mjs` is the user-level installer for Linux x64. It does not
+use sudo, does not edit shell profiles, and does not download models.
+
+```sh
+sha256sum -c SHA256SUMS --ignore-missing
+node ./robert-<version>-linux-x64-install.mjs install
+$HOME/.local/bin/robert --version
+$HOME/.local/bin/robert doctor
+```
+
+Require `OK` for `robert-<version>-linux-x64-install.mjs`, not only for other files. By
+default, `~/.local/bin/robert` points at a versioned launcher under
+`~/.local/lib/robert-cli/versions/`. If `~/.local/bin` is not on your `PATH`, add it yourself
+and open a new terminal. A custom prefix uses the same `--prefix` for install and uninstall,
+including a path with spaces:
+
+```sh
+node ./robert-<version>-linux-x64-install.mjs install --prefix "$HOME/My Robert 安装"
+"$HOME/My Robert 安装/bin/robert" --version
+```
+
+Upgrade by running the newer installer with the same prefix. Reinstalling identical bytes is
+idempotent. Downgrades are refused, and so is replacing the same version with different
+content. Older version directories remain until uninstall. A portable archive already in that
+prefix is not adopted. Remove its launcher yourself, or choose another prefix.
+
+Uninstall with the installer you saved (repeat `--prefix` when you used one):
+
+```sh
+node ./robert-<version>-linux-x64-install.mjs uninstall
+```
+
+That removes only verified installer-owned version files and its launcher. Config, personal
+instructions, SQLite sessions, unrelated files, and shell profiles stay. An interrupted run
+can leave `.install-lock` or `.stage-*` directories. Do not remove a lock while an installer
+is still running. Publishing a version directory and switching the launcher are separate
+renames. There is no whole-install crash recovery.
+
 ## First run
 
 `robert doctor` (and `robert doctor --json`) is a read-only report of your machine, Node.js, and
-provider status. It always exits 0 today, even when it reports problems.
+provider status. It always exits 0 today, even when it reports problems. It does not save a
+model and it does not call one.
 
-**Today:** the first time you run `robert` in a terminal with no model set, it lists installed
-models (tool-capable ones first) and saves your pick. One-shot commands and `robert exec` do not
-show that picker; pass `--model <name>` or run interactive `robert` once.
+`robert init` chooses an installed model for the provider you already configured. It does not
+download models, switch providers, enable tools, or change permission policy. It needs Node.js
+22.13 or newer and a reachable model server. Ollama is the default. A reachable server still
+works when that server's own CLI is not on `PATH`.
 
-A dedicated `robert init` setup command is coming (it is not in the current product). When it
-ships, use `robert init` — or the first interactive `robert` with no model — to finish setup.
+```sh
+robert init
+robert init --yes
+robert init --yes --skip-test
+```
 
-This page does not recommend a particular model. Use `robert models` or the first-run list to see
+Interactive `robert init` lists installed models, tool-capable ones first, with capability
+labels. Enter a number or an exact name. Enter alone chooses the first. A chat-only model
+requires an explicit Yes and otherwise returns to the list. `--yes` selects the first
+tool-capable model and does not prompt. It refuses when the only installed models are
+chat-only. A global `--model <name>` is honored, and `--yes` still refuses a chat-only model
+named that way.
+
+The chosen name is saved in your personal config. Other settings are left alone. Environment
+variables and flags still override the saved model. Unless you pass `--skip-test`, init then
+sends one tool-free request: `Reply with the single word: ok`. Any nonempty reply is enough.
+That checks connectivity. It does not show that the model can code or call tools. The default
+timeout is 30 seconds. `--skip-test` skips the request and reports that the response is
+unverified. If the probe fails later, the saved model remains so you can fix the server and
+run init again.
+
+The first interactive `robert`, when no model is selected, uses this same setup before chat.
+Chat that already has a model, and session resume, keep the model they already use. One-shot
+commands and `robert exec` never open the picker. Without a model they point you at
+`robert init`.
+
+This page does not recommend a particular model. Use `robert models` or the init list to see
 what you have and whether each model can call tools.
+
+## Settings and data
+
+`robert doctor` prints the paths on your machine. These folders are outside both the portable
+extract directory and the script install directory. A script uninstall leaves them in place.
+Robert does not use a separate cache directory.
+
+If `ROBERT_HOME` is an absolute path, settings and sessions both live in that folder. A relative
+`ROBERT_HOME` is ignored.
+
+Otherwise on Windows:
+
+- Settings: `%APPDATA%\Robert\config.json`
+- Personal instructions: `%APPDATA%\Robert\ROBERT.md`
+- Sessions: `%LOCALAPPDATA%\Robert\robert.db`
+
+Otherwise on Linux. A relative `XDG_CONFIG_HOME` or `XDG_DATA_HOME` is ignored:
+
+- Settings: `~/.config/robert/config.json`, or `$XDG_CONFIG_HOME/robert/config.json`
+- Personal instructions: `ROBERT.md` in that same settings folder
+- Sessions: `~/.local/share/robert/robert.db`, or `$XDG_DATA_HOME/robert/robert.db`
+
+SQLite WAL mode may also leave `robert.db-wal` and `robert.db-shm` next to `robert.db`.
 
 ## Upgrade
 
-Download and verify the newer archive for your platform, extract it, and run the new launcher's
-`--version`. Settings and saved sessions live outside the extracted folder, so replacing that
-folder does not delete them.
+Portable archive: download and verify the newer archive and `SHA256SUMS` the same way as
+install, extract it to a new folder (or replace the old extracted folder), and run the new
+launcher's `--version` (`.\robert.cmd --version` or `./robert --version`). Settings and
+sessions stay outside that folder, so replacing it does not delete them. There is no automatic
+migrator.
+
+Script install: run the newer installer with the same `-InstallDir` or `--prefix`. On Windows,
+installing the identical version again is supported, and a same-version installer whose payload
+differs is refused. On Linux, reinstalling identical bytes is idempotent, and a same-version
+installer with different content is refused. Both refuse a downgrade. See
+[Script installers](#script-installers).
 
 ## Uninstall
 
-There is no uninstaller, because this is a portable folder, not an installed program.
+A portable folder has no uninstaller. Delete the extracted `robert-<version>-windows-x64` or
+`robert-<version>-linux-x64` directory and, if you are done with them, the downloaded archive
+and `SHA256SUMS`. On Linux that is `rm -rf robert-<version>-linux-x64`. If you added the
+extract directory to `PATH`, remove that entry.
 
-1. Delete the extracted `robert-<version>-windows-x64` or `robert-<version>-linux-x64` folder, and
-   the downloaded archive if you no longer need it.
-2. Optionally delete settings and sessions:
-   - Windows: `%APPDATA%\Robert` and `%LOCALAPPDATA%\Robert`
-   - Linux: `~/.config/robert` and `~/.local/share/robert` (or `$XDG_CONFIG_HOME` / `$XDG_DATA_HOME`)
-   - If you set `ROBERT_HOME`, delete that folder instead
-3. If you added the extract folder to `PATH`, remove that entry.
+To delete settings and sessions as well, when `ROBERT_HOME` is unset:
 
-The session database file is `robert.db` in the data folder (plus SQLite WAL sidecars
-`robert.db-wal` and `robert.db-shm` if they exist). Robert does not use a separate cache
-directory.
+```powershell
+Remove-Item -Recurse -Force $env:APPDATA\Robert
+Remove-Item -Recurse -Force $env:LOCALAPPDATA\Robert
+```
+
+```sh
+rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/robert"
+rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/robert"
+```
+
+If you set `ROBERT_HOME`, delete that folder instead. `%LOCALAPPDATA%\Robert` and
+`~/.local/share/robert` are session data. They are not the script install. The Windows install
+directory defaults to `%LOCALAPPDATA%\Programs\Robert`. The Linux install lives under
+`~/.local/lib/robert-cli` with its launcher at `~/.local/bin/robert`, or under the `--prefix`
+you chose.
+
+Script uninstall does not delete settings or sessions. Windows, default directory:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Programs\Robert\uninstall.ps1" uninstall
+```
+
+Pass `-InstallDir` when you did not use that default. You can also uninstall **Robert CLI** from
+the current-user Windows application list. Linux, repeating `--prefix` when you used one:
+
+```sh
+node ./robert-<version>-linux-x64-install.mjs uninstall
+```
 
 ## Bugs
 
