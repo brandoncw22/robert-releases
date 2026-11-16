@@ -5,7 +5,7 @@ computer (through [Ollama](https://ollama.com) or an OpenAI-compatible server yo
 needs no account, subscription, or internet connection once your models are available, and it sends
 no telemetry.
 
-This repository publishes Robert's Windows and Linux **portable archives** and their SHA-256
+This repository will publish Robert's Windows and Linux **portable archives** and their SHA-256
 checksum file. Application source is kept out of this repository.
 
 **No release has been published yet.** When a version is tagged, the assets will appear on the
@@ -57,7 +57,7 @@ Replace `<version>` with the version on the release page (for example `0.1.0` or
    **lowercase**. Compare them case-insensitively (`-eq` is case-insensitive for strings):
 
    ```powershell
-   $archive = Get-Item .\robert-*-windows-x64.zip
+   $archive = Get-Item .\robert-<version>-windows-x64.zip
    $actual = (Get-FileHash -Algorithm SHA256 -Path $archive).Hash
    $expected = (
      Get-Content .\SHA256SUMS |
