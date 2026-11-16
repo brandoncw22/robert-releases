@@ -53,10 +53,7 @@ files are not Authenticode-signed, and no separate signature file (`.sig`, `.asc
 Replace `<version>` with the version on the release page (for example `0.1.0` or `0.1.0-rc.1`).
 
 Portable archives do not install themselves or change `PATH`. Script installers are a separate
-path, described below and in the source guides:
-[Install Robert on Windows](https://github.com/brandoncw22/Robert/blob/main/docs/install-windows.md)
-and
-[Install Robert on Linux](https://github.com/brandoncw22/Robert/blob/main/docs/install-linux.md).
+path, described below.
 
 ### Windows
 
@@ -184,8 +181,6 @@ entry it originally added. Settings (`%APPDATA%\Robert`), instructions, SQLite s
 rolled back automatically. Read the error and see which files remain before you delete
 anything.
 
-Details: [Install Robert on Windows](https://github.com/brandoncw22/Robert/blob/main/docs/install-windows.md).
-
 ### Linux script installer
 
 `robert-<version>-linux-x64-install.mjs` is the user-level installer for Linux x64. It does not
@@ -225,8 +220,6 @@ instructions, SQLite sessions, unrelated files, and shell profiles stay. An inte
 can leave `.install-lock` or `.stage-*` directories. Do not remove a lock while an installer
 is still running. Publishing a version directory and switching the launcher are separate
 renames. There is no whole-install crash recovery.
-
-Details: [Install Robert on Linux](https://github.com/brandoncw22/Robert/blob/main/docs/install-linux.md).
 
 ## First run
 
@@ -268,37 +261,80 @@ commands and `robert exec` never open the picker. Without a model they point you
 This page does not recommend a particular model. Use `robert models` or the init list to see
 what you have and whether each model can call tools.
 
-Failure, cancellation, and exit codes:
-[First-run setup](https://github.com/brandoncw22/Robert/blob/main/docs/onboarding-usage.md).
+## Settings and data
+
+`robert doctor` prints the paths on your machine. These folders are outside both the portable
+extract directory and the script install directory. A script uninstall leaves them in place.
+Robert does not use a separate cache directory.
+
+If `ROBERT_HOME` is an absolute path, settings and sessions both live in that folder. A relative
+`ROBERT_HOME` is ignored.
+
+Otherwise on Windows:
+
+- Settings: `%APPDATA%\Robert\config.json`
+- Personal instructions: `%APPDATA%\Robert\ROBERT.md`
+- Sessions: `%LOCALAPPDATA%\Robert\robert.db`
+
+Otherwise on Linux. A relative `XDG_CONFIG_HOME` or `XDG_DATA_HOME` is ignored:
+
+- Settings: `~/.config/robert/config.json`, or `$XDG_CONFIG_HOME/robert/config.json`
+- Personal instructions: `ROBERT.md` in that same settings folder
+- Sessions: `~/.local/share/robert/robert.db`, or `$XDG_DATA_HOME/robert/robert.db`
+
+SQLite WAL mode may also leave `robert.db-wal` and `robert.db-shm` next to `robert.db`.
 
 ## Upgrade
 
-For a portable archive, download and verify the newer archive for your platform, extract it, and
-run the new launcher's `--version`. Settings and saved sessions live outside the extracted
-folder, so replacing that folder does not delete them.
+Portable archive: download and verify the newer archive and `SHA256SUMS` the same way as
+install, extract it to a new folder (or replace the old extracted folder), and run the new
+launcher's `--version` (`.\robert.cmd --version` or `./robert --version`). Settings and
+sessions stay outside that folder, so replacing it does not delete them. There is no automatic
+migrator.
 
-For a script install, run the newer installer with the same `-InstallDir` or `--prefix`. See
+Script install: run the newer installer with the same `-InstallDir` or `--prefix`. On Windows,
+installing the identical version again is supported, and a same-version installer whose payload
+differs is refused. On Linux, reinstalling identical bytes is idempotent, and a same-version
+installer with different content is refused. Both refuse a downgrade. See
 [Script installers](#script-installers).
 
 ## Uninstall
 
-A portable folder is not an installed program, so that copy has no uninstaller.
+A portable folder has no uninstaller. Delete the extracted `robert-<version>-windows-x64` or
+`robert-<version>-linux-x64` directory and, if you are done with them, the downloaded archive
+and `SHA256SUMS`. On Linux that is `rm -rf robert-<version>-linux-x64`. If you added the
+extract directory to `PATH`, remove that entry.
 
-1. Delete the extracted `robert-<version>-windows-x64` or `robert-<version>-linux-x64` folder, and
-   the downloaded archive if you no longer need it.
-2. Optionally delete settings and sessions:
-   - Windows: `%APPDATA%\Robert` and `%LOCALAPPDATA%\Robert`
-   - Linux: `~/.config/robert` and `~/.local/share/robert` (or `$XDG_CONFIG_HOME` / `$XDG_DATA_HOME`)
-   - If you set `ROBERT_HOME`, delete that folder instead
-3. If you added the extract folder to `PATH`, remove that entry.
+To delete settings and sessions as well, when `ROBERT_HOME` is unset:
 
-The session database file is `robert.db` in the data folder (plus SQLite WAL sidecars
-`robert.db-wal` and `robert.db-shm` if they exist). Robert does not use a separate cache
-directory.
+```powershell
+Remove-Item -Recurse -Force $env:APPDATA\Robert
+Remove-Item -Recurse -Force $env:LOCALAPPDATA\Robert
+```
 
-To remove a script installation, use the uninstall command under
-[Script installers](#script-installers). That uninstall leaves settings and sessions in place
-unless you delete them yourself.
+```sh
+rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/robert"
+rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/robert"
+```
+
+If you set `ROBERT_HOME`, delete that folder instead. `%LOCALAPPDATA%\Robert` and
+`~/.local/share/robert` are session data. They are not the script install. The Windows install
+directory defaults to `%LOCALAPPDATA%\Programs\Robert`. The Linux install lives under
+`~/.local/lib/robert-cli` with its launcher at `~/.local/bin/robert`, or under the `--prefix`
+you chose.
+
+Script uninstall does not delete settings or sessions. Windows, default directory:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Programs\Robert\uninstall.ps1" uninstall
+```
+
+Pass `-InstallDir` when you did not use that default. You can also uninstall **Robert CLI** from
+the current-user Windows application list. Linux, repeating `--prefix` when you used one:
+
+```sh
+node ./robert-<version>-linux-x64-install.mjs uninstall
+```
 
 ## Bugs
 
